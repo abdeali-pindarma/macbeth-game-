@@ -1,0 +1,780 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;1,400&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+#root{background:#0a0500;font-family:'Crimson Text',serif;color:#e8d5a3;min-height:700px;overflow:hidden;position:relative}
+canvas{display:block}
+#ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+#hud{position:absolute;top:0;left:0;width:100%;padding:10px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.panel{background:rgba(10,5,0,0.82);border:1px solid #5a3010;border-radius:8px;padding:8px 12px;min-width:180px;pointer-events:all}
+.pname{font-family:'Cinzel',serif;font-size:.8rem;color:#c9a84c;font-weight:700;letter-spacing:1px;margin-bottom:3px}
+.hprow{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.hpbar{flex:1;height:10px;background:#1a0800;border-radius:10px;overflow:hidden;border:1px solid #3a2000}
+.hpfill{height:100%;border-radius:10px;transition:width .4s}
+.hpfill.ally{background:linear-gradient(90deg,#c9a84c,#f0c060)}
+.hpfill.foe{background:linear-gradient(90deg,#8b1a1a,#c02020)}
+.hpnum{font-size:.7rem;font-family:'Cinzel',serif;color:#e8d5a3;min-width:36px;text-align:right}
+.statrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px}
+.stat{font-size:.62rem;background:rgba(201,168,76,.12);border:1px solid #4a3010;border-radius:3px;padding:1px 5px;color:#c9a84c;font-family:'Cinzel',serif}
+#center-hud{position:absolute;top:10px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none}
+.round-txt{font-family:'Cinzel',serif;font-size:.75rem;color:#7a5a20;background:rgba(10,5,0,.8);border:1px solid #3a2000;border-radius:10px;padding:3px 12px;letter-spacing:1px}
+#action-panel{position:absolute;bottom:0;left:0;width:100%;background:rgba(6,3,0,0.92);border-top:1px solid #3a2000;padding:10px 14px;pointer-events:all}
+#log-area{height:46px;overflow:hidden;display:flex;flex-direction:column-reverse;gap:2px;margin-bottom:8px}
+.logline{font-size:.78rem;color:#a08040;line-height:1.3}
+.logline.hi{color:#e8d5a3;font-weight:600}
+.logline.red{color:#e07050}
+.logline.gold{color:#c9a84c;font-style:italic}
+#btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.gbtn{font-family:'Cinzel',serif;background:#140a00;border:1px solid #5a3010;color:#c9a84c;padding:7px 14px;border-radius:6px;cursor:pointer;font-size:.75rem;letter-spacing:.5px;transition:all .18s;pointer-events:all}
+.gbtn:hover:not(:disabled){background:#241400;border-color:#c9a84c;transform:translateY(-1px)}
+.gbtn:disabled{opacity:.3;cursor:not-allowed}
+.gbtn.red{border-color:#7a2010;color:#e07050}
+.gbtn.red:hover:not(:disabled){background:#200800;border-color:#e07050}
+.gbtn.purple{border-color:#5a2a8a;color:#b080e0}
+.gbtn.purple:hover:not(:disabled){background:#150830;border-color:#b080e0}
+#overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:all;background:rgba(6,3,0,.93)}
+#overlay.hidden{display:none}
+.ov-title{font-family:'Cinzel',serif;font-size:1.8rem;font-weight:900;color:#c9a84c;letter-spacing:3px;text-align:center;margin-bottom:.3rem}
+.ov-sub{color:#7a5a20;font-style:italic;font-size:1rem;text-align:center;margin-bottom:1.2rem}
+.ov-btn{font-family:'Cinzel',serif;background:#c9a84c;color:#0a0500;border:none;padding:10px 32px;border-radius:6px;cursor:pointer;font-size:1rem;font-weight:700;letter-spacing:1px;margin:.2rem}
+.ov-btn.sec{background:transparent;color:#c9a84c;border:1.5px solid #c9a84c}
+#quiz-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:90%;max-width:520px;background:rgba(8,4,0,.97);border:1px solid #5a3010;border-radius:10px;padding:1.1rem;pointer-events:all;display:none}
+.qhdr{font-family:'Cinzel',serif;color:#c9a84c;font-size:.82rem;letter-spacing:1px;margin-bottom:.5rem}
+.qtxt{color:#e8d5a3;font-size:.92rem;line-height:1.5;margin-bottom:.7rem}
+.qopt{display:block;width:100%;background:#0d0700;border:1px solid #3a2000;color:#c4a47a;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:.85rem;font-family:'Crimson Text',serif;text-align:left;margin-bottom:5px;transition:all .15s}
+.qopt:hover{border-color:#c9a84c;color:#e8d5a3}
+.qopt.ok{border-color:#3a7020;background:#1a3010;color:#7dc45a}
+.qopt.ng{border-color:#7a2000;background:#200800;color:#e07050}
+.qfb{font-size:.8rem;color:#c4a47a;font-style:italic;margin-top:.5rem;padding:.5rem;background:#0d0700;border-radius:6px;border:1px solid #2a1800;display:none}
+#kill-feed{position:absolute;top:110px;right:10px;display:flex;flex-direction:column;gap:4px;pointer-events:none;max-width:180px}
+.kf{font-size:.68rem;color:#e07050;background:rgba(10,5,0,.75);border-left:2px solid #8b1a1a;padding:2px 6px;border-radius:0 4px 4px 0;animation:kfade 3s ease-out forwards;font-family:'Cinzel',serif}
+@keyframes kfade{0%{opacity:1;transform:translateX(0)}80%{opacity:1}100%{opacity:0;transform:translateX(20px)}}
+#morale-bar{position:absolute;top:90px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none}
+.morale-wrap{display:flex;align-items:center;gap:6px;background:rgba(10,5,0,.8);border:1px solid #3a2000;border-radius:20px;padding:3px 10px}
+.morale-label{font-size:.62rem;color:#7a5a20;font-family:'Cinzel',serif}
+.morale-track{width:100px;height:6px;background:#1a0800;border-radius:6px;overflow:hidden}
+.morale-fill{height:100%;border-radius:6px;background:#c9a84c;transition:width .5s}
+</style>
+
+<div id="root">
+  <canvas id="wc"></canvas>
+  <div id="ui">
+    <div id="hud">
+      <div class="panel">
+        <div class="pname">&#9876; MACBETH'S ARMY</div>
+        <div class="hprow">
+          <div class="hpbar"><div class="hpfill ally" id="ally-hp" style="width:100%"></div></div>
+          <div class="hpnum" id="ally-hp-num">100</div>
+        </div>
+        <div class="statrow">
+          <span class="stat" id="ally-soldiers">&#9876; 500 troops</span>
+          <span class="stat" id="ally-cavalry">&#128014; 80 cavalry</span>
+          <span class="stat" id="ally-morale">&#128293; Morale: HIGH</span>
+        </div>
+      </div>
+      <div id="center-hud">
+        <div class="round-txt" id="round-txt">ROUND 1 — YOUR TURN</div>
+      </div>
+      <div class="panel" style="text-align:right">
+        <div class="pname" style="color:#e07050">&#128128; ENEMY FORCES</div>
+        <div class="hprow">
+          <div class="hpnum" id="foe-hp-num">100</div>
+          <div class="hpbar"><div class="hpfill foe" id="foe-hp" style="width:100%"></div></div>
+        </div>
+        <div class="statrow" style="justify-content:flex-end">
+          <span class="stat" id="foe-name-tag">Duncan's Guard</span>
+          <span class="stat" id="foe-soldiers">&#9876; 500 troops</span>
+          <span class="stat" id="foe-cavalry">&#128014; 80 cavalry</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="morale-bar">
+      <div class="morale-wrap">
+        <div class="morale-label">MACBETH</div>
+        <div class="morale-track"><div class="morale-fill" id="morale-fill" style="width:100%"></div></div>
+        <div class="morale-label">MORALE</div>
+      </div>
+    </div>
+
+    <div id="kill-feed"></div>
+
+    <div id="action-panel">
+      <div id="log-area"></div>
+      <div id="btns">
+        <button class="gbtn" id="btn-charge" onclick="doCmd('charge')">&#128014; Cavalry Charge</button>
+        <button class="gbtn" id="btn-inf" onclick="doCmd('infantry')">&#9876; Infantry Push</button>
+        <button class="gbtn red" id="btn-flank" onclick="doCmd('flank')">&#128481; Flanking Strike</button>
+        <button class="gbtn" id="btn-hold" onclick="doCmd('hold')">&#128737; Hold the Line</button>
+        <button class="gbtn purple" id="btn-know" onclick="doCmd('quiz')">&#128302; Witch's Wisdom</button>
+        <button class="gbtn red" id="btn-duel" onclick="doCmd('duel')">&#9876;&#9876; FINAL DUEL</button>
+      </div>
+    </div>
+
+    <div id="quiz-panel">
+      <div class="qhdr" id="q-hdr">&#128302; WITCH'S WISDOM — ACT I</div>
+      <div class="qtxt" id="q-txt"></div>
+      <div id="q-opts"></div>
+      <div class="qfb" id="q-fb"></div>
+      <button class="gbtn" id="q-cont" style="display:none;margin-top:8px;width:100%" onclick="closeQuiz()">Back to Battle &#8594;</button>
+    </div>
+
+    <div id="overlay">
+      <div style="font-size:2.5rem;margin-bottom:.3rem">&#9876;</div>
+      <div class="ov-title">MACBETH WARS</div>
+      <div class="ov-sub">"Lay on, Macduff — and damn'd be him that first cries, Hold, enough!"</div>
+      <div style="background:rgba(201,168,76,.08);border:1px solid #3a2000;border-radius:8px;padding:.8rem 1.2rem;max-width:380px;text-align:center;margin-bottom:1rem">
+        <p style="color:#c4a47a;font-size:.88rem;line-height:1.6">COMMAND a real battlefield. Watch horses CHARGE, soldiers clash, arrows fly. Answer Macbeth questions for massive war bonuses. Conquer all 5 Acts!</p>
+      </div>
+      <button class="ov-btn" onclick="startGame()">&#9876; MARCH TO WAR</button>
+      <div style="margin-top:.5rem;font-size:.7rem;color:#3a2800;font-family:Cinzel,serif;letter-spacing:1px">CLASS XII ENGLISH — CBSE</div>
+    </div>
+  </div>
+</div>
+
+<script>
+var canvas=document.getElementById('wc');
+var ctx=canvas.getContext('2d');
+var W=680,H=420;
+canvas.width=W;canvas.height=H;
+canvas.style.width='100%';canvas.style.height=H+'px';
+
+var BATTLES=[
+  {name:"Act I — Prophecy of Blood",foe:"The Witches' Curse",foeSp:"&#129497;",soldiers:300,cavalry:40,atkMult:.7,color:'#6a2a8a',
+   q:{q:"What THREE titles do the witches prophecy for Macbeth?",opts:["Thane of Glamis, Thane of Cawdor, King","Duke, Earl, King","General, Prince, Emperor","Thane of Ross, Thane of Fife, King"],ans:0,exp:"The witches hail him as Thane of Glamis (current), Thane of Cawdor (newly given) and future King of Scotland."}},
+  {name:"Act II — Murder at Inverness",foe:"King Duncan's Guard",foeSp:"&#128116;",soldiers:400,cavalry:60,atkMult:.9,color:'#1a4a8a',
+   q:{q:"What does Macbeth hallucinate before murdering Duncan?",opts:["A ghost","A floating dagger with the handle toward him","A crown on his head","Three witches chanting"],ans:1,exp:"Macbeth sees a floating dagger — his guilty, ambitious mind projecting the murder weapon before he commits the act."}},
+  {name:"Act III — Banquo's Ghost",foe:"Banquo's Vengeful Spirit",foeSp:"&#128123;",soldiers:500,cavalry:80,atkMult:1.1,color:'#1a5a3a',
+   q:{q:"At the banquet, why do guests become alarmed at Macbeth?",opts:["He confesses the murder","He speaks in terror to a ghost only HE can see","Lady Macbeth faints","Malcolm accuses him"],ans:1,exp:"Only Macbeth sees Banquo's ghost — it is his guilty conscience made visible. Guests see a king raving at an empty chair."}},
+  {name:"Act IV — The Tyrant's Wrath",foe:"Macduff's Vengeance",foeSp:"&#128481;",soldiers:600,cavalry:100,atkMult:1.3,color:'#6a3a10',
+   q:{q:"How does the prophecy 'Birnam Wood comes to Dunsinane' come TRUE?",opts:["Trees magically walk","Soldiers carry cut branches as camouflage","A storm blows the forest","Macbeth hallucinates it"],ans:1,exp:"Malcolm orders soldiers to carry branches — the wood 'moves'. The 'impossible' prophecy has a devastatingly simple human explanation."}},
+  {name:"Act V — The Final Battle",foe:"Malcolm + Macduff",foeSp:"&#128081;",soldiers:700,cavalry:120,atkMult:1.6,color:'#8b1a1a',
+   q:{q:"Why can Macduff kill Macbeth despite the prophecy 'no man born of woman shall harm him'?",opts:["Macduff is not human","Macduff was born by Caesarean section — technically not 'born of woman'","The witches lied","Macbeth stopped believing"],ans:1,exp:"Macduff was 'from his mother's womb untimely ripped' — Caesarean birth. The witch's riddle had a loophole. Macbeth's false security collapses."}},
+];
+
+var G={
+  act:0,pHP:100,eHP:100,round:1,active:false,
+  soldiers:500,cavalry:80,morale:100,
+  eSoldiers:500,eCavalry:80,
+  quizOpen:false,quizCorrect:null,
+  defending:false,
+};
+
+// Particles
+var particles=[];
+var soldiers_ally=[];
+var soldiers_foe=[];
+var horses_ally=[];
+var horses_foe=[];
+var arrows=[];
+var effects=[];
+var screenShake={x:0,y:0,power:0};
+
+function rnd(a,b){return a+Math.random()*(b-a);}
+function rndInt(a,b){return Math.floor(rnd(a,b+1));}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
+
+// Sky gradient colors
+var SKY_TOP='#1a0a00';
+var SKY_MID='#2a1200';
+var SKY_HOR='#5a2800';
+var GROUND='#1a0e00';
+var GRASS='#0d0800';
+var HILL='#120900';
+
+function spawnArmy(){
+  soldiers_ally=[];soldiers_foe=[];horses_ally=[];horses_foe=[];
+  var b=BATTLES[G.act];
+  var count=Math.min(30,Math.floor(G.soldiers/16));
+  for(var i=0;i<count;i++){
+    soldiers_ally.push({x:rnd(30,200),y:rnd(280,340),vx:rnd(.1,.4),vy:rnd(-.05,.05),hp:1,dead:false,
+      frame:Math.floor(rnd(0,4)),timer:rnd(0,20)});
+  }
+  var ecount=Math.min(30,Math.floor(G.eSoldiers/16));
+  for(var i=0;i<ecount;i++){
+    soldiers_foe.push({x:rnd(480,650),y:rnd(280,340),vx:-rnd(.1,.4),vy:rnd(-.05,.05),hp:1,dead:false,
+      frame:Math.floor(rnd(0,4)),timer:rnd(0,20),color:b.color});
+  }
+  var hcount=Math.min(6,Math.floor(G.cavalry/13));
+  for(var i=0;i<hcount;i++){
+    horses_ally.push({x:rnd(20,150),y:rnd(255,290),vx:rnd(.2,.6),gallop:0,dead:false,frame:0,timer:rnd(0,10)});
+  }
+  for(var i=0;i<hcount;i++){
+    horses_foe.push({x:rnd(530,660),y:rnd(255,290),vx:-rnd(.2,.6),gallop:0,dead:false,frame:0,timer:rnd(0,10),color:b.color});
+  }
+}
+
+function doCharge(type){
+  var intensity=type==='cavalry'?1.4:type==='flank'?1.2:1;
+  // Launch projectiles
+  var count=type==='charge'?8:type==='flank'?12:6;
+  for(var i=0;i<count;i++){
+    arrows.push({
+      x:rnd(160,280),y:rnd(260,320),
+      tx:rnd(400,580),ty:rnd(260,320),
+      prog:0,spd:rnd(.02,.05),
+      type:type,
+      color:type==='flank'?'#e07050':type==='charge'?'#c9a84c':'#a09060'
+    });
+  }
+  // Push soldiers forward
+  soldiers_ally.forEach(function(s){if(!s.dead){s.vx=rnd(.4,1)*intensity;}});
+  if(type==='charge') horses_ally.forEach(function(h){if(!h.dead){h.vx=rnd(1.5,3);h.gallop=1;}});
+  spawnShake(type==='charge'?8:type==='flank'?5:3);
+  spawnBlood(rnd(380,480),rnd(270,310),8);
+}
+
+function doFoeAttack(power){
+  for(var i=0;i<6;i++){
+    arrows.push({
+      x:rnd(400,560),y:rnd(260,320),
+      tx:rnd(80,260),ty:rnd(260,320),
+      prog:0,spd:rnd(.02,.04),
+      type:'foe',color:'#c03030'
+    });
+  }
+  soldiers_foe.forEach(function(s){if(!s.dead)s.vx=-rnd(.3,.8)*power;});
+  if(power>1) horses_foe.forEach(function(h){if(!h.dead){h.vx=-rnd(1,2.5);h.gallop=1;}});
+  spawnShake(power*4);
+  spawnBlood(rnd(180,280),rnd(270,310),6);
+}
+
+function spawnShake(p){screenShake.power=Math.max(screenShake.power,p);}
+
+function spawnBlood(x,y,count){
+  for(var i=0;i<count;i++){
+    var a=rnd(0,Math.PI*2);var spd=rnd(1,4);
+    particles.push({x:x,y:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd-rnd(0,2),
+      life:rnd(20,50),maxLife:50,r:rnd(2,5),color:'#8b1a1a',type:'blood'});
+  }
+}
+
+function spawnSpark(x,y,count){
+  for(var i=0;i<count;i++){
+    var a=rnd(0,Math.PI*2);var spd=rnd(2,6);
+    particles.push({x:x,y:y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd-rnd(1,3),
+      life:rnd(15,35),maxLife:35,r:rnd(1,3),color:'#c9a84c',type:'spark'});
+  }
+}
+
+function spawnSmoke(x,y){
+  for(var i=0;i<5;i++){
+    particles.push({x:x+rnd(-10,10),y:y,vx:rnd(-.3,.3),vy:-rnd(.3,1),
+      life:60,maxLife:60,r:rnd(6,14),color:'#2a1800',type:'smoke'});
+  }
+}
+
+function killSoldier(arr,count){
+  var killed=0;
+  for(var i=0;i<arr.length&&killed<count;i++){
+    if(!arr[i].dead){arr[i].dead=true;killed++;spawnBlood(arr[i].x,arr[i].y,4);}
+  }
+}
+
+function killHorse(arr,count){
+  var killed=0;
+  for(var i=0;i<arr.length&&killed<count;i++){
+    if(!arr[i].dead){arr[i].dead=true;killed++;spawnBlood(arr[i].x,arr[i].y,6);spawnSmoke(arr[i].x,arr[i].y);}
+  }
+}
+
+// Drawing
+function drawBg(){
+  // Sky
+  var sg=ctx.createLinearGradient(0,0,0,220);
+  sg.addColorStop(0,'#0d0500');sg.addColorStop(.5,'#1f0e00');sg.addColorStop(1,'#4a2200');
+  ctx.fillStyle=sg;ctx.fillRect(0,0,W,220);
+
+  // Moon
+  ctx.save();ctx.globalAlpha=.8;
+  ctx.fillStyle='#f5e8c0';ctx.beginPath();ctx.arc(W-80,45,22,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#0d0500';ctx.beginPath();ctx.arc(W-72,40,18,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+
+  // Stars
+  ctx.save();ctx.globalAlpha=.6;ctx.fillStyle='#fff';
+  for(var i=0;i<40;i++){
+    var sx=(i*137.5)%W,sy=(i*79.3)%180;
+    var ss=.5+Math.sin(Date.now()*.001+i)*.5;
+    ctx.beginPath();ctx.arc(sx,sy,ss,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+
+  // Distant hills
+  ctx.fillStyle='#120800';
+  ctx.beginPath();ctx.moveTo(0,220);
+  ctx.bezierCurveTo(80,170,160,190,240,175);
+  ctx.bezierCurveTo(320,160,400,180,480,170);
+  ctx.bezierCurveTo(560,160,620,180,W,175);
+  ctx.lineTo(W,220);ctx.closePath();ctx.fill();
+
+  // Ground gradient
+  var gg=ctx.createLinearGradient(0,220,0,H);
+  gg.addColorStop(0,'#1e0f00');gg.addColorStop(.4,'#150900');gg.addColorStop(1,'#0a0500');
+  ctx.fillStyle=gg;ctx.fillRect(0,220,W,H-220);
+
+  // Ground lines (perspective)
+  ctx.save();ctx.globalAlpha=.15;ctx.strokeStyle='#5a3010';ctx.lineWidth=.5;
+  for(var i=0;i<12;i++){
+    var py=240+i*16;
+    ctx.beginPath();ctx.moveTo(0,py);ctx.lineTo(W,py);ctx.stroke();
+  }
+  ctx.restore();
+
+  // Distant castle silhouette
+  ctx.fillStyle='#0d0700';
+  var cx2=300;
+  ctx.fillRect(cx2-30,155,60,65);
+  ctx.fillRect(cx2-40,148,20,30);ctx.fillRect(cx2+20,148,20,30);
+  ctx.fillRect(cx2-45,143,8,10);ctx.fillRect(cx2-35,143,8,10);
+  ctx.fillRect(cx2+17,143,8,10);ctx.fillRect(cx2+28,143,8,10);
+  ctx.fillStyle='#f5c060';ctx.globalAlpha=.15;
+  ctx.fillRect(cx2-8,170,16,20);ctx.globalAlpha=1;
+
+  // Fire torches on battlefield
+  drawFire(120,240,8);drawFire(560,240,8);drawFire(340,230,10);
+}
+
+function drawFire(x,y,size){
+  ctx.save();
+  var t=Date.now()*.003;
+  ctx.globalAlpha=.7+Math.sin(t*3+x)*.2;
+  ctx.fillStyle='#ff6600';
+  ctx.beginPath();ctx.ellipse(x,y,size*.4,size,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#ffcc00';ctx.globalAlpha=.5;
+  ctx.beginPath();ctx.ellipse(x,y+size*.2,size*.2,size*.6,0,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+}
+
+function drawHorse(x,y,facing,color,dead,gallop,frame){
+  if(dead){
+    ctx.save();ctx.globalAlpha=.5;
+    ctx.fillStyle=color||'#8a6030';
+    ctx.fillRect(x-16,y+8,32,10);
+    ctx.restore();return;
+  }
+  ctx.save();
+  if(facing<0)ctx.scale(-1,1);
+  var ox=facing<0?-x-20:x;
+  var t=Date.now()*.008;
+  var legSwing=gallop?Math.sin(t*4)*10:Math.sin(t)*4;
+  var bounce=gallop?Math.abs(Math.sin(t*4))*4:Math.abs(Math.sin(t))*2;
+
+  // Body
+  ctx.fillStyle=color||'#6a4020';
+  ctx.beginPath();ctx.ellipse(ox,y-bounce,18,9,-.1,0,Math.PI*2);ctx.fill();
+  // Head
+  ctx.beginPath();ctx.ellipse(ox+20,y-12-bounce,8,6,-.3,0,Math.PI*2);ctx.fill();
+  // Neck
+  ctx.fillRect(ox+11,y-14-bounce,10,10);
+  // Mane
+  ctx.fillStyle=color==='#8b1a1a'?'#5a0a0a':'#3a2010';
+  ctx.fillRect(ox+12,y-18-bounce,4,10);
+  // Legs
+  ctx.strokeStyle=color||'#6a4020';ctx.lineWidth=3;ctx.lineCap='round';
+  ctx.beginPath();ctx.moveTo(ox-8,y-bounce);ctx.lineTo(ox-8+legSwing*.5,y+12);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ox-3,y-bounce);ctx.lineTo(ox-3-legSwing*.5,y+12);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ox+6,y-bounce);ctx.lineTo(ox+6+legSwing*.3,y+12);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(ox+12,y-bounce);ctx.lineTo(ox+12-legSwing*.3,y+12);ctx.stroke();
+  // Tail
+  ctx.strokeStyle=color==='#8b1a1a'?'#5a0a0a':'#3a2010';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(ox-16,y-4-bounce);
+  ctx.quadraticCurveTo(ox-26+Math.sin(t)*4,y+4-bounce,ox-20+Math.sin(t)*6,y+10-bounce);
+  ctx.stroke();
+  // Rider silhouette
+  ctx.fillStyle=facing>0?'#1a0e00':'#2a0808';
+  ctx.fillRect(ox-4,y-26-bounce,10,14);
+  ctx.beginPath();ctx.arc(ox+1,y-28-bounce,5,0,Math.PI*2);ctx.fill();
+  // Weapon
+  ctx.strokeStyle='#c9a84c';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(ox+5,y-24-bounce);ctx.lineTo(ox+20+(gallop?8:0),y-32-bounce);ctx.stroke();
+  ctx.restore();
+}
+
+function drawSoldier(x,y,facing,color,dead,frame){
+  if(dead){
+    ctx.save();ctx.globalAlpha=.4;
+    ctx.fillStyle='#3a1a00';ctx.fillRect(x-4,y+6,10,4);
+    ctx.restore();return;
+  }
+  ctx.save();
+  var t=Date.now()*.004+x;
+  var bob=Math.sin(t)*1.5;
+  if(facing<0){ctx.scale(-1,1);x=-x;}
+  // Body
+  ctx.fillStyle='#1a0e00';ctx.fillRect(x-3,y-10+bob,7,12);
+  // Head
+  ctx.fillStyle=color||'#8a6030';
+  ctx.beginPath();ctx.arc(x+.5,y-12+bob,4,0,Math.PI*2);ctx.fill();
+  // Helmet
+  ctx.fillStyle='#5a4010';ctx.fillRect(x-3,y-15+bob,7,5);ctx.beginPath();ctx.arc(x+.5,y-14+bob,4,Math.PI,0);ctx.fill();
+  // Spear
+  ctx.strokeStyle='#8a6030';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(x+5,y-8+bob);ctx.lineTo(x+12,y-22+bob);ctx.stroke();
+  ctx.fillStyle='#c9a84c';ctx.fillRect(x+10,y-24+bob,2,5);
+  // Shield
+  ctx.fillStyle=color||'#3a2010';ctx.fillRect(x-7,y-9+bob,4,9);
+  ctx.restore();
+}
+
+function drawArrow(ar){
+  var px=ar.x+(ar.tx-ar.x)*ar.prog;
+  var py=ar.y+(ar.ty-ar.y)*ar.prog - Math.sin(ar.prog*Math.PI)*20;
+  var dx=ar.tx-ar.x,dy=ar.ty-ar.y;
+  var angle=Math.atan2(dy,dx);
+  ctx.save();
+  ctx.strokeStyle=ar.color;ctx.lineWidth=ar.type==='charge'?3:1.5;
+  ctx.translate(px,py);ctx.rotate(angle);
+  ctx.beginPath();ctx.moveTo(-8,0);ctx.lineTo(8,0);ctx.stroke();
+  if(ar.type==='charge'){
+    ctx.fillStyle=ar.color;ctx.beginPath();ctx.moveTo(8,0);ctx.lineTo(2,-3);ctx.lineTo(2,3);ctx.closePath();ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawParticle(p){
+  var alpha=p.life/p.maxLife;
+  ctx.save();ctx.globalAlpha=alpha;
+  if(p.type==='smoke'){
+    ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r*(2-alpha),0,Math.PI*2);ctx.fill();
+  } else {
+    ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawBanner(x,y,color,txt){
+  ctx.save();
+  var t=Date.now()*.002;
+  ctx.translate(x,y);
+  // Pole
+  ctx.strokeStyle='#8a6030';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-50);ctx.stroke();
+  // Flag wave
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(0,-50);
+  ctx.lineTo(28+Math.sin(t)*3,-46+Math.sin(t)*2);
+  ctx.lineTo(26+Math.sin(t+.5)*3,-38+Math.sin(t+.5)*2);
+  ctx.lineTo(0,-42);
+  ctx.closePath();ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.7)';ctx.font='bold 7px Cinzel';ctx.textAlign='center';
+  ctx.fillText(txt,14,-44+Math.sin(t)*1);
+  ctx.restore();
+}
+
+function addKillFeed(msg){
+  var kf=document.getElementById('kill-feed');
+  var d=document.createElement('div');
+  d.className='kf';d.textContent=msg;kf.insertBefore(d,kf.firstChild);
+  setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d);},3000);
+  while(kf.children.length>5)kf.removeChild(kf.lastChild);
+}
+
+var animId;
+function loop(){
+  animId=requestAnimationFrame(loop);
+  // Screen shake
+  if(screenShake.power>0){
+    screenShake.x=(Math.random()-.5)*screenShake.power;
+    screenShake.y=(Math.random()-.5)*screenShake.power;
+    screenShake.power*=.85;
+    if(screenShake.power<.1)screenShake.power=0;
+  } else {screenShake.x=0;screenShake.y=0;}
+
+  ctx.save();ctx.translate(screenShake.x,screenShake.y);
+  ctx.clearRect(-10,-10,W+20,H+20);
+  drawBg();
+
+  // Banners
+  drawBanner(60,255,'#c9a84c','MAC');
+  drawBanner(610,255,BATTLES[G.act].color,'FOE');
+
+  // Soldiers
+  soldiers_foe.forEach(function(s){
+    if(!s.dead){s.x+=s.vx;if(s.x<360)s.x=360;}
+    s.timer++;if(s.timer>20){s.frame=(s.frame+1)%4;s.timer=0;}
+    drawSoldier(s.x,s.y,-1,s.color,s.dead,s.frame);
+  });
+  soldiers_ally.forEach(function(s){
+    if(!s.dead){s.x+=s.vx;if(s.x>320)s.x=320;s.vx*=.97;}
+    s.timer++;if(s.timer>20){s.frame=(s.frame+1)%4;s.timer=0;}
+    drawSoldier(s.x,s.y,1,null,s.dead,s.frame);
+  });
+
+  // Horses
+  horses_foe.forEach(function(h){
+    if(!h.dead){h.x+=h.vx;if(h.x<340)h.x=340;h.vx*=.96;}
+    drawHorse(h.x,h.y,-1,h.color||'#8b1a1a',h.dead,h.gallop,h.frame);
+    if(h.gallop>0)h.gallop*=.98;
+  });
+  horses_ally.forEach(function(h){
+    if(!h.dead){h.x+=h.vx;if(h.x>300)h.x=300;h.vx*=.96;}
+    drawHorse(h.x,h.y,1,null,h.dead,h.gallop,h.frame);
+    if(h.gallop>0)h.gallop*=.98;
+  });
+
+  // Arrows
+  arrows=arrows.filter(function(a){
+    a.prog+=a.spd;
+    if(a.prog>=1){
+      spawnBlood(a.tx,a.ty,3);spawnSpark(a.tx,a.ty,5);return false;
+    }
+    drawArrow(a);return true;
+  });
+
+  // Particles
+  particles=particles.filter(function(p){
+    p.x+=p.vx;p.y+=p.vy;p.vy+=.08;p.life--;
+    if(p.life>0){drawParticle(p);return true;}return false;
+  });
+
+  // Clash sparks in middle
+  if(G.active&&Math.random()<.06){
+    spawnSpark(rnd(280,400),rnd(270,310),2);
+  }
+
+  ctx.restore();
+}
+
+function setButtons(on){
+  ['btn-charge','btn-inf','btn-flank','btn-hold','btn-know','btn-duel'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.disabled=!on;
+  });
+  var duel=document.getElementById('btn-duel');
+  if(duel)duel.disabled=!on||(G.eHP>30);
+}
+
+function updateHUD(){
+  var b=BATTLES[G.act];
+  document.getElementById('ally-hp').style.width=clamp(G.pHP,0,100)+'%';
+  document.getElementById('foe-hp').style.width=clamp(G.eHP,0,100)+'%';
+  document.getElementById('ally-hp-num').textContent=Math.max(0,Math.round(G.pHP));
+  document.getElementById('foe-hp-num').textContent=Math.max(0,Math.round(G.eHP));
+  document.getElementById('ally-soldiers').textContent='\u2694 '+G.soldiers+' troops';
+  document.getElementById('ally-cavalry').textContent='\uD83D\uDC0E '+G.cavalry+' cavalry';
+  var mr=G.morale>70?'HIGH':G.morale>40?'MID':'LOW';
+  document.getElementById('ally-morale').textContent='\uD83D\uDD25 Morale: '+mr;
+  document.getElementById('foe-soldiers').textContent='\u2694 '+G.eSoldiers+' troops';
+  document.getElementById('foe-cavalry').textContent='\uD83D\uDC0E '+G.eCavalry+' cavalry';
+  document.getElementById('foe-name-tag').textContent=b.foe;
+  document.getElementById('morale-fill').style.width=G.morale+'%';
+  document.getElementById('round-txt').textContent='ROUND '+G.round+' — YOUR TURN';
+  setButtons(true);
+}
+
+function addLog(msg,cls){
+  var l=document.getElementById('log-area');
+  var d=document.createElement('div');
+  d.className='logline '+(cls||'');d.innerHTML=msg;
+  l.insertBefore(d,l.firstChild);
+  while(l.children.length>5)l.removeChild(l.lastChild);
+}
+
+function delay(ms){return new Promise(function(r){setTimeout(r,ms);});}
+
+async function doCmd(type){
+  if(!G.active||G.quizOpen)return;
+  setButtons(false);
+  G.defending=false;
+
+  if(type==='quiz'){openQuiz();return;}
+
+  var dmg=0,edied=0,hdied=0,msg='',cls='';
+
+  if(type==='charge'){
+    dmg=rnd(12,20);
+    edied=rndInt(2,5);hdied=rndInt(1,2);
+    doCharge('charge');
+    G.eSoldiers=Math.max(0,G.eSoldiers-edied*15);
+    G.eCavalry=Math.max(0,G.eCavalry-hdied*8);
+    killSoldier(soldiers_foe,edied);killHorse(horses_foe,hdied);
+    msg='&#128014; CAVALRY CHARGE! Horses crash into enemy lines! -'+Math.round(dmg)+' enemy HP!';cls='gold';
+    addKillFeed('Horse charge kills '+edied+' infantry!');
+    spawnArmy();
+  } else if(type==='infantry'){
+    dmg=rnd(8,15);edied=rndInt(1,3);
+    doCharge('infantry');
+    G.eSoldiers=Math.max(0,G.eSoldiers-edied*12);
+    killSoldier(soldiers_foe,edied);
+    msg='&#9876; Infantry push forward! Swords clash! -'+Math.round(dmg)+' enemy HP!';cls='hi';
+    addKillFeed('Infantry kills '+edied+' foes!');
+    spawnArmy();
+  } else if(type==='flank'){
+    dmg=rnd(18,28);edied=rndInt(3,6);
+    doCharge('flank');
+    G.eSoldiers=Math.max(0,G.eSoldiers-edied*14);
+    killSoldier(soldiers_foe,edied);
+    msg='&#128481; FLANKING STRIKE! You catch them off guard! -'+Math.round(dmg)+' enemy HP!';cls='red';
+    addKillFeed('Flank ambush kills '+edied+'!');
+    if(Math.random()<.3){var self=rndInt(5,10);G.pHP-=self;G.soldiers=Math.max(0,G.soldiers-self*6);
+      killSoldier(soldiers_ally,2);addLog('Counterattack! -'+self+' HP to your forces!','red');}
+    spawnArmy();
+  } else if(type==='hold'){
+    G.defending=true;G.morale=Math.min(100,G.morale+12);
+    spawnShake(2);
+    for(var i=0;i<4;i++)arrows.push({x:rnd(400,550),y:rnd(265,320),tx:rnd(80,200),ty:rnd(265,320),prog:0,spd:.035,type:'foe',color:'#c03030'});
+    msg='&#128737; HOLD THE LINE! Shields up! Morale restored!';cls='gold';
+    addKillFeed('Shields block the volley!');
+  } else if(type==='duel'){
+    if(G.eHP>30){addLog('Enemy too strong for a duel yet!','red');setButtons(true);return;}
+    dmg=rnd(25,40);
+    doCharge('charge');spawnShake(12);
+    for(var i=0;i<15;i++)spawnSpark(rnd(280,400),rnd(260,310),3);
+    msg='&#9876;&#9876; MACBETH CHARGES INTO SINGLE COMBAT! Massive attack!';cls='gold';
+    addKillFeed('MACBETH DUELS THE ENEMY!');
+  }
+
+  G.eHP=Math.max(0,G.eHP-dmg);
+  addLog(msg,cls);
+  updateHUD();
+  if(checkEnd())return;
+
+  await delay(1400);
+  await foeAttack();
+}
+
+async function foeAttack(){
+  var b=BATTLES[G.act];
+  document.getElementById('round-txt').textContent='ROUND '+G.round+' — ENEMY TURN';
+  await delay(500);
+
+  var dmg=rnd(6,14)*b.atkMult;
+  if(G.defending)dmg*=.3;
+  var psoldiers=rndInt(1,3);
+  doFoeAttack(b.atkMult);
+  G.pHP=Math.max(0,G.pHP-dmg);
+  G.soldiers=Math.max(0,G.soldiers-psoldiers*18);
+  G.morale=Math.max(0,G.morale-rnd(3,8));
+  killSoldier(soldiers_ally,psoldiers);
+  addLog('&#128128; '+b.foe+' counter-attacks! -'+Math.round(dmg)+' HP!'+(G.defending?' (BLOCKED!)':''),'red');
+  addKillFeed(b.foe+' kills '+psoldiers*18+' of yours!');
+  G.round++;
+  spawnArmy();
+  updateHUD();
+  if(!checkEnd())setButtons(true);
+}
+
+function checkEnd(){
+  if(G.eHP<=0){endBattle(true);return true;}
+  if(G.pHP<=0){endBattle(false);return true;}
+  return false;
+}
+
+function endBattle(win){
+  G.active=false;
+  var b=BATTLES[G.act];
+  var ov=document.getElementById('overlay');
+  ov.classList.remove('hidden');
+  ov.innerHTML='';
+  if(win){
+    if(G.act<BATTLES.length-1)G.act++;
+    ov.innerHTML='<div style="font-size:2.5rem;margin-bottom:.3rem">&#127942;</div>'
+      +'<div class="ov-title">VICTORY!</div>'
+      +'<div class="ov-sub">'+b.name+' — CONQUERED!</div>'
+      +'<div style="background:rgba(201,168,76,.08);border:1px solid #3a2000;border-radius:8px;padding:.8rem 1.2rem;max-width:400px;text-align:center;margin-bottom:.8rem"><p style="color:#c4a47a;font-size:.85rem;line-height:1.6">'+b.q.exp+'</p></div>'
+      +(G.act<BATTLES.length?'<button class="ov-btn" onclick="nextBattle()">&#9876; Next Battle: '+BATTLES[G.act].name+'</button>':'<div class="ov-title" style="color:#c9a84c">ALL ACTS CONQUERED!</div>')
+      +'<button class="ov-btn sec" onclick="replayBattle()">Replay This Battle</button>';
+  } else {
+    ov.innerHTML='<div style="font-size:2.5rem;margin-bottom:.3rem">&#128128;</div>'
+      +'<div class="ov-title" style="color:#e07050">MACBETH FALLS!</div>'
+      +'<div class="ov-sub">Your army is routed. Scotland is lost.</div>'
+      +'<div style="background:rgba(139,26,26,.1);border:1px solid #5a1010;border-radius:8px;padding:.7rem 1.1rem;max-width:380px;text-align:center;margin-bottom:.8rem"><p style="color:#c4a47a;font-size:.85rem;line-height:1.5">Study the story and return stronger. Tip: Use Witch\'s Wisdom for huge bonus damage!</p></div>'
+      +'<button class="ov-btn" onclick="replayBattle()">&#9876; Try Again</button>';
+  }
+}
+
+function nextBattle(){
+  document.getElementById('overlay').classList.add('hidden');
+  beginBattle();
+}
+
+function replayBattle(){
+  if(G.act>0&&document.querySelector('.ov-title').textContent==='VICTORY!'){}
+  document.getElementById('overlay').classList.add('hidden');
+  G.pHP=100;G.eHP=100;G.round=1;G.active=true;G.morale=100;
+  G.soldiers=500;G.cavalry=80;G.eSoldiers=BATTLES[G.act].soldiers;G.eCavalry=BATTLES[G.act].cavalry;
+  spawnArmy();updateHUD();
+  addLog('&#9876; Battle restarts! Fight harder!','gold');
+  document.getElementById('log-area').innerHTML='';
+  addLog('&#9876; '+BATTLES[G.act].name+' — BATTLE BEGINS!','gold');
+}
+
+function beginBattle(){
+  var b=BATTLES[G.act];
+  G.pHP=100;G.eHP=100;G.round=1;G.active=true;G.morale=100;G.defending=false;
+  G.soldiers=500;G.cavalry=80;
+  G.eSoldiers=b.soldiers;G.eCavalry=b.cavalry;
+  document.getElementById('log-area').innerHTML='';
+  spawnArmy();updateHUD();
+  addLog('&#9876; '+b.name+' — BATTLE BEGINS!','gold');
+  addLog('Enemy: '+b.foe+' | Use Cavalry Charge and Witch\'s Wisdom for best results!');
+}
+
+function openQuiz(){
+  G.quizOpen=true;
+  var b=BATTLES[G.act];
+  document.getElementById('q-hdr').textContent='\u{1F302} WITCH\'S WISDOM — '+b.name.split('—')[0];
+  document.getElementById('q-txt').textContent=b.q.q;
+  var op=document.getElementById('q-opts');op.innerHTML='';
+  b.q.opts.forEach(function(opt,i){
+    var btn=document.createElement('button');
+    btn.className='qopt';btn.textContent=opt;
+    btn.onclick=(function(idx,el){return function(){
+      var correct=idx===b.q.ans;
+      document.querySelectorAll('.qopt').forEach(function(o,j){
+        o.onclick=null;if(j===b.q.ans)o.classList.add('ok');else if(o===el&&!correct)o.classList.add('ng');
+      });
+      G.quizCorrect=correct;
+      var fb=document.getElementById('q-fb');
+      fb.style.display='block';fb.style.background=correct?'#1a3010':'#200800';
+      fb.style.borderColor=correct?'#3a7020':'#7a2000';
+      fb.textContent=(correct?'CORRECT! +40 War Bonus! ':'Wrong! -8 HP. ')+b.q.exp;
+      document.getElementById('q-cont').style.display='block';
+    };})(i,btn);
+    op.appendChild(btn);
+  });
+  document.getElementById('q-fb').style.display='none';
+  document.getElementById('q-cont').style.display='none';
+  document.getElementById('quiz-panel').style.display='block';
+}
+
+function closeQuiz(){
+  document.getElementById('quiz-panel').style.display='none';
+  G.quizOpen=false;
+  var correct=G.quizCorrect;
+  G.quizCorrect=null;
+  if(correct){
+    var dmg=rnd(35,45);
+    G.eHP=Math.max(0,G.eHP-dmg);
+    for(var i=0;i<10;i++)spawnSpark(rnd(350,500),rnd(240,300),4);
+    spawnShake(10);
+    for(var i=0;i<8;i++){
+      arrows.push({x:rnd(100,200),y:rnd(255,305),tx:rnd(420,580),ty:rnd(255,305),prog:0,spd:.04,type:'charge',color:'#c9a84c'});
+    }
+    G.eSoldiers=Math.max(0,G.eSoldiers-Math.round(rnd(50,100)));
+    killSoldier(soldiers_foe,5);killHorse(horses_foe,2);
+    addLog('\uD83D\uDC0E WITCH\'S WISDOM! CORRECT! Massive -'+Math.round(dmg)+' damage to enemy!','gold');
+    addKillFeed('Wisdom strike decimates the foe!');
+    spawnArmy();updateHUD();
+    if(checkEnd())return;
+    setTimeout(function(){foeAttack();},1200);
+  } else {
+    G.pHP=Math.max(0,G.pHP-8);
+    spawnBlood(rnd(150,250),rnd(265,310),6);spawnShake(5);
+    addLog('\uD83D\uDC0E Wrong answer! Your generals hesitate! -8 HP!','red');
+    addKillFeed('Wrong! Your men falter!');
+    updateHUD();
+    if(!checkEnd())setTimeout(function(){foeAttack();},900);
+  }
+}
+
+function startGame(){
+  document.getElementById('overlay').classList.add('hidden');
+  G.act=0;
+  beginBattle();
+}
+
+loop();
+</script>
